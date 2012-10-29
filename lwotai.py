@@ -138,6 +138,11 @@ class Country:
 			markersStr = "\n   Markers: %s" % ", ".join(self.markers)
 		if self.type == "Shia-Mix" or self.type == "Suni":
 			return "%s, %s %s, %d Resource(s)\n   Troops:%d Active:%d Sleeper:%d Cadre:%d Aid:%d Besieged:%d Reg Ch:%d Plots:%d %s" % (self.name, self.govStr(),self.alignment,self.app.countryResources(self.name),self.troops(),self.activeCells,self.sleeperCells, self.cadre, self.aid, self.besieged, self.regimeChange, self.plots, markersStr)
+
+		elif self.name == "Philippines":
+			return "%s - Posture:%s\n   Troops:%d Active:%d Sleeper:%d Cadre:%d Plots:%d %s" % (self.name,self.posture, self.troops(), self.activeCells,self.sleeperCells, self.cadre, self.plots, markersStr)
+
+
 		elif self.type == "Non-Muslim" and self.type != "United States":
 			return "%s - Posture:%s\n   Active:%d Sleeper:%d Cadre:%d Plots:%d %s" % (self.name,self.posture, self.activeCells,self.sleeperCells, self.cadre, self.plots, markersStr)
 		elif self.type == "Iran":
@@ -340,7 +345,7 @@ class Card:
 			if self.number == 48: # Adam Gadahn
 				if app.numCellsAvailable() <= 0:
 					return False
-				return app.getYesNoFromUser("Is this the 1st card of the Johadist Action Phase? (y/n): ")
+				return app.getYesNoFromUser("Is this the 1st card of the Jihadist Action Phase? (y/n): ")
 			elif self.number == 49: # Al-Ittihad al-Islami
 				return True
 			elif self.number == 50: # Ansar al-Islam
@@ -354,7 +359,7 @@ class Card:
 							return True
 				return False
 			elif self.number == 53: # Madrassas
-				return app.getYesNoFromUser("Is this the 1st card of the Johadist Action Phase? (y/n): ")
+				return app.getYesNoFromUser("Is this the 1st card of the Jihadist Action Phase? (y/n): ")
 			elif self.number == 54: # Moqtada al-Sadr
 				return app.map["Iraq"].troops() > 0
 			elif self.number == 55: # Uyghur Jihad
@@ -1593,6 +1598,7 @@ class Card:
 			elif self.number == 87 or self.number == 88 or self.number == 89: # Martyrdom Operation
 				if app.executePlot(1, False, [1], True) == 1:
 					app.outputToHistory("No plots could be placed.", True)
+					self.handleRadicalization(self.deck[str(self.number)].ops)					
 			elif self.number == 90: # Quagmire
 				app.map["United States"].posture = "Soft"
 				app.outputToHistory("US Posture now Soft.", False)
@@ -3300,17 +3306,17 @@ class Labyrinth(cmd.Cmd):
 					disStr = None
 					while not disStr:
 						if self.map[where].sleeperCells >= 2 and self.map[where].activeCells >= 2:
-							input = self.my_raw_input("You can disrupt two cells. Enter aa, as, or ss for active or slepper cells: ")
+							input = self.my_raw_input("You can disrupt two cells. Enter aa, as, or ss for active or sleeper cells: ")
 							input = input.lower()
 							if input == "aa" or input == "as" or input == "sa" or input == "ss":
 								disStr = input
 						elif self.map[where].sleeperCells >= 2:
-							input = self.my_raw_input("You can disrupt two cells. Enter as, or ss for active or slepper cells: ")
+							input = self.my_raw_input("You can disrupt two cells. Enter as, or ss for active or sleeper cells: ")
 							input = input.lower()
 							if input == "as" or input == "sa" or input == "ss":
 								disStr = input
 						elif self.map[where].activeCells >= 2:
-							input = self.my_raw_input("You can disrupt two cells. Enter aa, or as for active or slepper cells: ")
+							input = self.my_raw_input("You can disrupt two cells. Enter aa, or as for active or sleeper cells: ")
 							input = input.lower()
 							if input == "as" or input == "sa" or input == "aa":
 								disStr = input
@@ -4356,6 +4362,17 @@ class Labyrinth(cmd.Cmd):
 			else:
 				self.map[country].posture = "Hard"
 			self.outputToHistory("%s Posture now %s" % (country, self.map[country].posture), True)
+
+			if self.map[country].troops() > 0:
+				if plotType == "WMD":
+					self.prestige = 1
+				else:
+					self.prestige -= 1
+				if self.prestige < 1:
+					self.prestige = 1
+				self.outputToHistory("Troops present so US Prestige now %d" % self.prestige, False)
+
+
 			if self.map[country].schengen:
 				for i in range(len(schCountries)):
 					if schPostureRolls[i] <= 4:
@@ -5049,19 +5066,17 @@ class Labyrinth(cmd.Cmd):
 				self.outputToHistory("* War of Ideas in %s - Posture Hard" % where)
 				if self.map["United States"].posture == "Hard":
 					self.prestige += 1
-					if self.prestige > 9:
-						self.prestige = 9
-					else:
-						self.outputToHistory("US Prestige now %d" % self.prestige)
+					if self.prestige > 12:
+						self.prestige = 12
+					self.outputToHistory("US Prestige now %d" % self.prestige)
 			else:
 				self.map[where].posture = "Soft"
 				self.outputToHistory("* War of Ideas in %s - Posture Soft" % where)
 				if self.map["United States"].posture == "Soft":
 					self.prestige += 1
-					if self.prestige > 9:
-						self.prestige = 9
-					else:
-						self.outputToHistory("US Prestige now %d" % self.prestige)
+					if self.prestige > 12:
+						self.prestige = 12
+					self.outputToHistory("US Prestige now %d" % self.prestige)
 		else: # Muslim
 			woiRoll = self.getRollFromUser("Enter WoI roll or r to have program roll: ")
 			modRoll = self.modifiedWoIRoll(woiRoll, where)
