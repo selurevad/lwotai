@@ -3046,6 +3046,8 @@ class Labyrinth(cmd.Cmd):
 			self.testCountry(country)
 			cellsToMove = min(numCells, self.cells)
 			self.map[country].sleeperCells += cellsToMove
+			# remove cadre 
+			self.map[country].cadre = 0
 			self.cells -= cellsToMove
 			self.outputToHistory("%d Sleeper Cell(s) placed in %s" % (cellsToMove, country), False)
 			self.outputToHistory(self.map[country].countryStr(), True)
